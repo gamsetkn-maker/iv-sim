@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IV SIM v2 — Periferik IV Kateter Eğitim Oyunu</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e1a; --bg2:#111827; --bg3:#1a2235; --card:#1e2d45; --card2:#243350;
+  --border:rgba(100,180,255,0.15); --border2:rgba(100,180,255,0.3);
+  --accent:#38bdf8; --accent2:#0ea5e9;
+  --green:#34d399; --green2:#059669;
+  --red:#f87171; --red2:#dc2626;
+  --yellow:#fbbf24; --purple:#a78bfa;
+  --text:#e2e8f0; --text2:#94a3b8; --text3:#64748b;
+  --glow:0 0 20px rgba(56,189,248,0.3);
+  --glow-g:0 0 20px rgba(52,211,153,0.3);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(56,189,248,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+#app{position:relative;z-index:1;max-width:800px;margin:0 auto;padding:0 14px 80px;}
+
+/* HUD */
+#hud{position:sticky;top:0;z-index:100;background:rgba(10,14,26,0.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:8px 14px;display:none;}
+.hud-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.hud-xp{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--accent);}
+.hud-xp small{font-size:11px;color:var(--text3);font-family:'Nunito',sans-serif;font-weight:400;}
+.badge-chip{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Rajdhani',sans-serif;letter-spacing:1px;background:var(--bg3);border:1px solid var(--border2);color:var(--accent);}
+.badge-chip.uzman{border-color:var(--yellow);color:var(--yellow);}
+.badge-chip.usta{border-color:var(--green);color:var(--green);}
+.hp-wrap{flex:1;min-width:100px;}
+.hp-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;}
+.hp-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.hp-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green));border-radius:3px;transition:width .5s,background .5s;}
+.timer-c{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;min-width:40px;text-align:center;}
+.timer-c.urg{color:var(--red);animation:blink .5s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.dots{display:flex;gap:4px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);transition:all .3s;}
+.dot.done{background:var(--green);border-color:var(--green);}
+.dot.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 6px var(--accent);}
+.stage-mini{font-size:11px;color:var(--text3);white-space:nowrap;}
+
+/* Screens */
+.screen{display:none;}
+.screen.active{display:block;animation:fadeIn .35s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* INTRO */
+#s-intro{text-align:center;padding:36px 12px;}
+.game-logo{font-family:'Rajdhani',sans-serif;font-size:48px;font-weight:700;color:var(--accent);letter-spacing:4px;text-shadow:var(--glow);margin-bottom:4px;}
+.game-sub{font-size:12px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:28px;}
+.story-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:0 auto 22px;max-width:580px;text-align:left;}
+.nur-wrap{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:var(--glow);}
+.av-name{font-weight:700;font-size:15px;}
+.av-role{font-size:12px;color:var(--text3);}
+.story-txt{font-size:13px;line-height:1.8;color:var(--text2);}
+.story-txt strong{color:var(--accent);}
+.stage-overview{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:0 auto 24px;max-width:620px;}
+.ov-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;font-size:12px;color:var(--text2);}
+.ov-icon{font-size:24px;margin-bottom:5px;display:block;}
+.ov-name{font-weight:700;color:var(--text);font-size:13px;margin-bottom:2px;}
+.btn-start{display:inline-block;padding:13px 46px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border:none;border-radius:10px;font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;letter-spacing:2px;cursor:pointer;box-shadow:var(--glow);transition:transform .15s;}
+.btn-start:hover{transform:scale(1.04);}
+
+/* STAGE */
+#s-stage{padding:16px 0;}
+.st-num{font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:3px;}
+.st-name{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;line-height:1.1;margin-bottom:6px;}
+.st-obj{font-size:13px;color:var(--text2);background:var(--bg3);border-left:3px solid var(--accent);padding:9px 13px;border-radius:0 8px 8px 0;margin-bottom:14px;line-height:1.6;}
+.st-obj strong{color:var(--accent);}
+.t-track{height:3px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:16px;}
+.t-prog{height:100%;background:var(--accent);border-radius:3px;transition:width 1s linear,background .5s;}
+
+/* Feedback */
+.fb-box{display:none;padding:13px 16px;border-radius:10px;margin-bottom:14px;font-size:13px;line-height:1.6;}
+.fb-box.show{display:flex;gap:10px;align-items:flex-start;animation:slideIn .3s ease;}
+.fb-box.ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.4);color:#a7f3d0;}
+.fb-box.fail{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);color:#fecaca;}
+.fb-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.fb-title{font-weight:700;font-size:14px;margin-bottom:3px;}
+.fb-detail{font-size:12px;opacity:.9;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+
+/* XP Toast */
+.xp-toast{position:fixed;top:65px;right:16px;z-index:999;background:rgba(56,189,248,.15);border:1px solid var(--accent);padding:6px 16px;border-radius:30px;font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--accent);box-shadow:var(--glow);pointer-events:none;animation:toastAnim 1.8s ease forwards;}
+@keyframes toastAnim{0%{opacity:0;transform:translateY(10px) scale(.8)}20%{opacity:1;transform:none}70%{opacity:1}100%{opacity:0;transform:translateY(-20px)}}
+
+/* Items grid */
+.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:9px;margin-bottom:14px;}
+.i-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 8px;cursor:pointer;text-align:center;transition:border-color .2s,background .2s,transform .15s;font-size:12px;color:var(--text2);user-select:none;}
+.i-card:hover{border-color:var(--accent);background:rgba(56,189,248,.07);transform:translateY(-2px);}
+.i-card.sel{border-color:var(--accent);background:rgba(56,189,248,.1);color:var(--accent);}
+.i-card.ok{border-color:var(--green);background:rgba(52,211,153,.1);color:var(--green);}
+.i-card.fail{border-color:var(--red);background:rgba(248,113,113,.08);color:var(--red);}
+.i-card .ic{font-size:28px;margin-bottom:6px;display:block;}
+.i-card .il{font-weight:600;font-size:12px;line-height:1.3;}
+
+/* Sort */
+.sort-list{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+.s-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:grab;transition:border-color .2s,background .2s;font-size:13px;color:var(--text);user-select:none;}
+.s-row:hover{border-color:var(--border2);}
+.s-row.dragging{opacity:.3;border-color:var(--accent);}
+.s-row.over{background:rgba(56,189,248,.07);border-color:var(--accent);}
+.s-row.ok{border-color:var(--green);background:rgba(52,211,153,.07);}
+.s-row.fail{border-color:var(--red);background:rgba(248,113,113,.06);}
+.s-num{width:24px;height:24px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--text2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.drag-h{color:var(--text3);font-size:16px;cursor:grab;}
+
+/* Anatomy */
+.anatomy-wrap{position:relative;margin:0 auto 14px;max-width:440px;}
+.ven-btn{position:absolute;cursor:pointer;border-radius:50%;transition:all .2s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);text-align:center;line-height:1.2;border:2px solid rgba(56,189,248,.4);background:rgba(56,189,248,.1);}
+.ven-btn:hover{background:rgba(56,189,248,.22);border-color:var(--accent);box-shadow:var(--glow);}
+.ven-btn.ok{background:rgba(52,211,153,.2);border-color:var(--green);color:var(--green);}
+.ven-btn.fail{background:rgba(248,113,113,.15);border-color:var(--red);color:var(--red);}
+
+/* Angle */
+.angle-stage{text-align:center;}
+.ang-disp{font-family:'Rajdhani',sans-serif;font-size:54px;font-weight:700;color:var(--accent);text-shadow:var(--glow);transition:color .3s;margin:8px 0 3px;}
+.ang-hint{font-size:13px;color:var(--text3);margin-bottom:14px;min-height:20px;}
+.ang-ctrl{display:flex;justify-content:center;align-items:center;gap:18px;margin-bottom:14px;}
+.ang-btn{width:46px;height:46px;border-radius:50%;background:var(--card);border:1px solid var(--border2);color:var(--text);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.ang-btn:hover{border-color:var(--accent);background:rgba(56,189,248,.1);color:var(--accent);}
+
+/* Complication */
+.comp-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;}
+.comp-title{font-weight:700;font-size:15px;margin-bottom:7px;}
+.vital-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.vbadge{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--text2);}
+.vbadge.al{border-color:var(--red);color:var(--red);}
+.comp-sym{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;}
+.comp-sym strong{color:var(--yellow);}
+.comp-opts{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.c-opt{padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);cursor:pointer;text-align:left;line-height:1.4;transition:all .2s;}
+.c-opt:hover:not(:disabled){border-color:var(--accent);background:rgba(56,189,248,.07);}
+.c-opt.c-ok{border-color:var(--green);background:rgba(52,211,153,.1);color:var(--green);}
+.c-opt.c-fail{border-color:var(--red);background:rgba(248,113,113,.07);color:var(--red);}
+
+/* Match pairs */
+.match-area{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.match-col{flex:1;min-width:140px;display:flex;flex-direction:column;gap:7px;}
+.match-col-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;padding:0 4px;}
+.m-item{padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .2s;line-height:1.4;min-height:44px;display:flex;align-items:center;}
+.m-item:hover{border-color:var(--accent);background:rgba(56,189,248,.07);}
+.m-item.sel{border-color:var(--accent);background:rgba(56,189,248,.12);color:var(--accent);}
+.m-item.ok{border-color:var(--green);background:rgba(52,211,153,.1);color:var(--green);cursor:default;}
+.m-item.fail{border-color:var(--red);background:rgba(248,113,113,.07);color:var(--red);}
+.m-item.matched{border-color:var(--green);background:rgba(52,211,153,.08);color:var(--green);cursor:default;opacity:.7;}
+
+/* Sequence check (click in order) */
+.seq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px;}
+.seq-item{padding:11px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .2s;line-height:1.4;position:relative;}
+.seq-item:hover{border-color:var(--accent);background:rgba(56,189,248,.07);}
+.seq-item.active-sel{border-color:var(--accent);background:rgba(56,189,248,.12);color:var(--accent);}
+.seq-item.ok{border-color:var(--green);background:rgba(52,211,153,.1);color:var(--green);cursor:default;}
+.seq-item.fail{border-color:var(--red);background:rgba(248,113,113,.08);color:var(--red);}
+.seq-badge{position:absolute;top:-8px;left:-8px;width:22px;height:22px;border-radius:50%;background:var(--green);color:#000;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+
+/* Blood flash */
+@keyframes bFlash{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+.bf{display:none;position:fixed;inset:0;z-index:500;background:radial-gradient(ellipse at center,rgba(248,113,113,.25) 0%,transparent 70%);pointer-events:none;}
+.bf.show{display:block;animation:bFlash .8s ease forwards;}
+
+/* Buttons */
+.btn-conf{padding:11px 28px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border:none;border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:transform .15s;box-shadow:var(--glow);}
+.btn-conf:hover{transform:scale(1.03);}
+.btn-next{display:inline-flex;align-items:center;gap:8px;padding:11px 26px;background:rgba(56,189,248,.1);border:1px solid var(--accent);color:var(--accent);border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;}
+.btn-next:hover{background:rgba(56,189,248,.2);}
+#next-wrap{margin-top:12px;display:none;}
+
+/* RESULT */
+#s-result{padding:36px 12px;text-align:center;}
+.r-title{font-family:'Rajdhani',sans-serif;font-size:40px;font-weight:700;letter-spacing:3px;margin-bottom:5px;}
+.r-badge{display:inline-block;padding:5px 22px;border-radius:30px;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;margin-bottom:14px;}
+.rb-c{border:2px solid var(--text3);color:var(--text3);}
+.rb-u{border:2px solid var(--yellow);color:var(--yellow);}
+.rb-m{border:2px solid var(--green);color:var(--green);box-shadow:var(--glow-g);}
+.r-quote{font-size:14px;color:var(--text2);line-height:1.7;max-width:500px;margin:0 auto 24px;}
+.r-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:460px;margin:0 auto 22px;}
+.r-stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 8px;}
+.rs-v{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;}
+.rs-l{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+.r-break{max-width:500px;margin:0 auto 22px;text-align:left;}
+.rb-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+.rb-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.rb-row:last-child{border:none;}
+.rb-name{flex:1;color:var(--text2);}
+.rb-xp{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;}
+.rb-xp.ok{color:var(--green);}
+.rb-xp.fail{color:var(--red);}
+.r-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.btn-sec{padding:11px 26px;background:var(--card);border:1px solid var(--border2);color:var(--accent);border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;}
+.btn-sec:hover{background:rgba(56,189,248,.1);}
+
+@media(max-width:520px){
+  .items-grid{grid-template-columns:repeat(2,1fr);}
+  .comp-opts{grid-template-columns:1fr;}
+  .match-area{flex-direction:column;}
+  .game-logo{font-size:36px;}
+  .r-stats{grid-template-columns:repeat(3,1fr);}
+}
+</style>
+</head>
+<body>
+<div id="bf" class="bf"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-row">
+    <div class="hud-xp" id="xp-v">0 <small>XP</small></div>
+    <div class="badge-chip" id="bc">ÇAYLAK</div>
+    <div class="hp-wrap">
+      <div class="hp-lbl">Hasta Güveni</div>
+      <div class="hp-bar"><div class="hp-fill" id="hpf" style="width:100%"></div></div>
+    </div>
+    <div class="timer-c" id="tc">–</div>
+    <div class="dots" id="dots"></div>
+    <div class="stage-mini" id="smini"></div>
+  </div>
+</div>
+
+<div id="app">
+
+<!-- INTRO -->
+<div id="s-intro" class="screen active">
+  <div style="padding-top:36px">
+    <div class="game-logo">IV SIM</div>
+    <div class="game-sub">Periferik İV Kateter Tam Protokol Simülasyonu</div>
+  </div>
+  <div class="story-box">
+    <div class="nur-wrap">
+      <div class="av">👩‍⚕️</div>
+      <div><div class="av-name">Hemşire Elif</div><div class="av-role">212 nolu servis — Sorumlu hemşire</div></div>
+    </div>
+    <div class="story-txt">
+      "Bugün <strong>Mehmet Bey</strong>'e IV kateter takman gerekiyor — 62 yaşında, 3 günlük IV antibiyotik tedavisi başlayacak.
+      Sana <strong>tüm protokolü</strong> eksiksiz uygulayacaksın: hazırlıktan kayıt formuna kadar.
+      Unutma: <strong>her adımın bir sebebi var</strong>, iyice öğren!"
+    </div>
+  </div>
+  <div class="stage-overview">
+    <div class="ov-card"><span class="ov-icon">📋</span><div class="ov-name">Ön Hazırlık</div>İstem, kimlik, bilgi</div>
+    <div class="ov-card"><span class="ov-icon">🧴</span><div class="ov-name">Malzeme</div>Doğru seçim</div>
+    <div class="ov-card"><span class="ov-icon">🛏️</span><div class="ov-name">Hasta Hazırlığı</div>Pozisyon, mahremiyet</div>
+    <div class="ov-card"><span class="ov-icon">💪</span><div class="ov-name">Ven Seçimi</div>Anatomi & turnike</div>
+    <div class="ov-card"><span class="ov-icon">🧽</span><div class="ov-name">Aseptik Teknik</div>Dezenfeksiyon sırası</div>
+    <div class="ov-card"><span class="ov-icon">💉</span><div class="ov-name">Kateter Yerleştirme</div>Açı, ilerleme, kontrol</div>
+    <div class="ov-card"><span class="ov-icon">🩹</span><div class="ov-name">Tespit & Kontrol</div>Flaster, SF, kayıt</div>
+    <div class="ov-card"><span class="ov-icon">⚠️</span><div class="ov-name">Komplikasyonlar</div>Flebit, infiltrasyon</div>
+  </div>
+  <button class="btn-start" onclick="startGame()">GÖREVE BAŞLA</button>
+  <div style="margin-top:12px;font-size:12px;color:var(--text3)">İnternet gerektirmez · Tarayıcıda çalışır · Paylaşılabilir</div>
+</div>
+
+<!-- STAGE -->
+<div id="s-stage" class="screen">
+  <div class="st-num" id="st-num"></div>
+  <div class="st-name" id="st-name"></div>
+  <div class="st-obj" id="st-obj"></div>
+  <div class="t-track"><div class="t-prog" id="tp" style="width:100%"></div></div>
+  <div class="fb-box" id="fb"><div class="fb-icon" id="fb-i"></div><div><div class="fb-title" id="fb-t"></div><div class="fb-detail" id="fb-d"></div></div></div>
+  <div id="stage-content"></div>
+  <div id="next-wrap"><button class="btn-next" onclick="nextStage()">Sonraki Görev →</button></div>
+</div>
+
+<!-- RESULT -->
+<div id="s-result" class="screen">
+  <div class="r-title" id="rt"></div>
+  <div class="r-badge" id="rb"></div>
+  <div class="r-quote" id="rq"></div>
+  <div class="r-stats">
+    <div class="r-stat"><div class="rs-v" id="rxp">0</div><div class="rs-l">Toplam XP</div></div>
+    <div class="r-stat"><div class="rs-v" id="rcor">0</div><div class="rs-l">Doğru</div></div>
+    <div class="r-stat"><div class="rs-v" id="rwr">0</div><div class="rs-l">Hata</div></div>
+  </div>
+  <div class="r-break"><div class="rb-title">Görev Sonuçları</div><div id="rbd"></div></div>
+  <div class="r-btns">
+    <button class="btn-sec" onclick="restartGame()">↺ Tekrar Oyna</button>
+    <button class="btn-conf" onclick="copyResult()">📋 Sonuçları Kopyala</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  STAGE DEFINITIONS  (8 stages, 33 protocol steps covered)
+// ═══════════════════════════════════════════════════════════════════
+const STAGES = [
+
+// ── STAGE 1: Ön Hazırlık (Adım 1-4) ────────────────────────────────
+{
+  id:'hazirlik', num:'GÖREV 1 / 8', name:'Ön Hazırlık',
+  obj:'<strong>Elif:</strong> "Mehmet Bey\'e girmeden önce ne yapman gerekiyor? Sırayı doğru belirle — bu adımlar hasta güvenliğinin temelidir." (Adımları sürükle-bırak ile sırala)',
+  type:'sort', time:50, xp:60,
+  steps:[
+    {t:'📋 Doktor istemini kontrol et (ilaç, doz, yol)',order:1},
+    {t:'💧 El hijyeni sağla (en az 20 sn / antiseptik)',order:2},
+    {t:'🪪 Bireyin kimliğini doğrula (isim + protokol no)',order:3},
+    {t:'🗣️ İşlemi açıkla, yazılı/sözlü onay al',order:4},
+  ],
+  okT:'✓ Protokol sıraı doğru!',
+  okD:'İstem kontrolü → El hijyeni → Kimlik doğrulama → Bilgilendirme & onay. Bu sıra hasta güvenliği ve yasal zorunlulukların temelidir.',
+  failT:'✗ Sıralama Hatası',
+  failD:'Doğru sıra: 1) İstem kontrolü 2) El hijyeni 3) Kimlik doğrulama 4) Bilgilendirme & onay. Kimlik doğrulamadan önce işleme başlamak ciddi hasta güvenliği riskidir.',
+},
+
+// ── STAGE 2: Malzeme (Adım 5) ───────────────────────────────────────
+{
+  id:'malzeme', num:'GÖREV 2 / 8', name:'Malzeme Seçimi',
+  obj:'<strong>Elif:</strong> "Steril tepsiye doğru malzemeleri koy. Fazla ya da eksik bir şey olmasın — her malzemenin protokolde yeri var." Gereklilerin TÜMÜNÜ seç, gereksizleri seçme.',
+  type:'multi', time:55, xp:65,
+  items:[
+    {l:'Antiseptik eldiven\n(temiz eldiven)',ic:'🧤',ok:true},
+    {l:'IV branül\n(uygun gauge)',ic:'💉',ok:true},
+    {l:'Antiseptikli pamuk\ntampon',ic:'🧴',ok:true},
+    {l:'Turnike',ic:'🟠',ok:true},
+    {l:'Şeffaf flaster /\nYapıştırıcı örtü',ic:'🩹',ok:true},
+    {l:'SF dolu enjektör\n(iğnesiz)',ic:'💊',ok:true},
+    {l:'Koruyucu örtü\n(branül altına)',ic:'🟫',ok:true},
+    {l:'Delici-kesici\natık kutusu',ic:'🗑️',ok:true},
+    {l:'Steril eldiven',ic:'🫙',ok:false},
+    {l:'Dikiş seti',ic:'🪡',ok:false},
+    {l:'Skalpel',ic:'🔪',ok:false},
+  ],
+  okT:'✓ Tam set hazır!',
+  okD:'Antiseptik (temiz) eldiven kullanılır — steril eldiven gerekmez. Tüm malzemeler protokole uygun. Delici-kesici atık kutusu baştan hazırlanmalıdır.',
+  failT:'✗ Malzeme Hatası',
+  failD:'Periferik IV\'de antiseptik (temiz) eldiven kullanılır, steril değil. Eksik: antiseptikli pamuk tampon, SF enjektör, koruyucu örtü, delici-kesici atık kutusu. Skalpel ve dikiş seti gerekmez.',
+},
+
+// ── STAGE 3: Hasta Hazırlığı (Adım 5-8) ────────────────────────────
+{
+  id:'hasta', num:'GÖREV 3 / 8', name:'Hasta Hazırlığı',
+  obj:'<strong>Elif:</strong> "Odaya girdin, malzemeleri getirdin. Sıradaki adımlar ne? Hangi sırada yapılmalı?" Kartları doğru sıraya getir.',
+  type:'sort', time:45, xp:55,
+  steps:[
+    {t:'🧳 Hazırlanan malzemeleri bireye yakın uygun bir alana yerleştir',order:1},
+    {t:'🚪 Bireyin mahremiyetini sağla (perde, kapı)',order:2},
+    {t:'🛏️ Yatak kenarlıklarını indir',order:3},
+    {t:'😌 Bireye rahat bir pozisyon ver (kol destekte, yatay)',order:4},
+  ],
+  okT:'✓ Hasta hazırlığı tam!',
+  okD:'Malzeme yerleştirme → Mahremiyet → Kenarlık indirme → Pozisyon. Bu sıra çalışma alanı güvenliğini ve hasta konforunu sağlar.',
+  failT:'✗ Sıralama Hatası',
+  failD:'Doğru sıra: Malzemeyi yerleştir → Mahremiyeti sağla → Yatak kenarlığını indir → Pozisyon ver. Güvenli çalışma alanı oluşturmadan işleme başlamak risktir.',
+},
+
+// ── STAGE 4: Ven Seçimi & Turnike (Adım 9-13) ──────────────────────
+{
+  id:'ven', num:'GÖREV 4 / 8', name:'Ven Seçimi & Turnike',
+  obj:'<strong>Elif:</strong> "Eldiveni giydik, kolları açtık. Mehmet Bey\'in sağ kolunda uygun ven yok — sol kola bakıyoruz. Hangi ven bölgesi 3 günlük tedavi için doğru?" Haritada tıkla.',
+  type:'anatomy', time:40, xp:55,
+  vens:[
+    {id:'oncekol',l:'Ön kol\nvenleri',ok:true,x:'37%',y:'46%',w:74,r:'✓ Doğru! Ön kol sefalik/bazilik venleri uzun süreli tedavide ilk tercih. Kol hareketini kısıtlamaz, infiltrasyon riski düşüktür.'},
+    {id:'antekub',l:'Antekübital\nfossa',ok:false,x:'54%',y:'30%',w:72,r:'Kısa erişim için uygun ama kol fleksiyonunu kısıtlar; uzun süreli tedavide önerilmez.'},
+    {id:'elsirtu',l:'El sırtı\nvenleri',ok:false,x:'31%',y:'69%',w:68,r:'Son tercih: ağrılı, hareket kısıtlar ve 3 günlük tedavide infiltrasyon riski yüksektir.'},
+    {id:'median',l:'Median\nkubital',ok:false,x:'63%',y:'32%',w:68,r:'Kan almak için ideal, uzun süreli IV için değil — aynı antekübital dezavantajlar geçerli.'},
+  ],
+  okT:'✓ Doğru ven bölgesi!',
+  okD:'Ön kol (sefalik/bazilik) venleri uzun süreli tedavide standart ilk tercihtir. Turnike 5-10 cm proksimale fiyonk şeklinde uygulanır. Ven görülemiyor ise: distalden proksimale sıvazla, hafifçe vur, yumruk yaptır.',
+  failT:'✗ Ven Seçimi Hatası',
+  failD:'',
+},
+
+// ── STAGE 5: Aseptik Teknik (Adım 14) ──────────────────────────────
+{
+  id:'aseptik', num:'GÖREV 5 / 8', name:'Aseptik Dezenfeksiyon',
+  obj:'<strong>Elif:</strong> "Veni belirledik, turnike takıldı. Şimdi dezenfeksiyon. Adımları doğru sıraya koy — en küçük hata kontaminasyon demek."',
+  type:'sort', time:50, xp:60,
+  steps:[
+    {t:'🧤 Antiseptik eldiveni giy',order:1},
+    {t:'🧴 Antiseptikli pamuk tamponu al, giriş bölgesini yukarıdan aşağıya TEK hareketle ya da 5 cm çapında dairesel hareketle sil',order:2},
+    {t:'⏳ Alanın kuruması için en az 5 saniye bekle (dokundurma!)',order:3},
+    {t:'💉 Branülün iğne kılıfını çıkar; hastaya birkaç sn yanma hissedebileceğini söyle',order:4},
+  ],
+  okT:'✓ Aseptik teknik tam!',
+  okD:'Eldiven → Antiseptik uygulama (tek ya da dairesel hareket) → Kuruma bekleme (≥5 sn) → Kılıf çıkarma. Kuruma beklenmeden giriş infeksiyon riskini artırır.',
+  failT:'✗ Aseptik Sıralama Hatası',
+  failD:'Doğru sıra: 1) Eldiven 2) Antiseptik uygula (tek hareket / dairesel) 3) Kuruma bekle ≥5 sn 4) Kılıf çıkar. "Kuruma bekleme" adımı sıklıkla atlanır — en kritik noktadır.',
+},
+
+// ── STAGE 6: Kateter Yerleştirme (Adım 15-23) ──────────────────────
+{
+  id:'kateter', num:'GÖREV 6 / 8', name:'Kateter Yerleştirme',
+  obj:'<strong>Elif:</strong> "Kritik an! Her soruyu doğru cevapla — yanlış bir adım hastana zarar verir." Sıralı soruları yanıtla.',
+  type:'sequence_qa', time:90, xp:90,
+  qas:[
+    {
+      q:'Deriyi gerdirmek için pasif el baş/işaret parmağı damara girilecek bölgenin ne kadar ALTından gerilir?',
+      opts:['Tam giriş noktasından','Yaklaşık 2.5 cm altından','5 cm altından','Geri çekilerek'],
+      ans:1,
+      explain:'2.5 cm alt — bu mesafe cildi düzgün gerer, veni sabitler ve kateter kontrolünü kolaylaştırır.'
+    },
+    {
+      q:'Branülün keskin yüzü nasıl tutulmalıdır?',
+      opts:['Aşağı bakacak şekilde','Yana eğik','Yukarı bakacak şekilde','Önemli değil'],
+      ans:2,
+      explain:'Keskin yüz (bevel) YUKARIDA tutulur — bu vene girişi kolaylaştırır ve damar hasarını minimize eder.'
+    },
+    {
+      q:'Standart giriş yöntemi: Giriş noktasının kaç cm altından, kaç derecelik açıyla cilde girilir?',
+      opts:['Giriş noktasından, 45°','1 cm altından, 30–45° → sonra 15°\'ye indir','2 cm altından, 90°','Doğrudan 15° ile'],
+      ans:1,
+      explain:'Giriş noktasının ~1 cm altından 30–45° ile gir, kan görününce açıyı 15°\'ye indir ve iğnenin 1/3\'ünü cilde paralel ilerlet.'
+    },
+    {
+      q:'Vene girildiğini nasıl anlarsın?',
+      opts:['Hasta ağrı duyar','Branül içinde kan görülür','İğne ilerlemeyi durdurur','Basınç hissedilir'],
+      ans:1,
+      explain:'Branül içinde kan görülmesi (backflow/geri kan akışı) vene girildiğinin kanıtıdır. Ardından 2 mm daha ilerletilir.'
+    },
+    {
+      q:'Kan görüldükten sonra mandren nasıl hareket ettirilir?',
+      opts:['Tam çekilir, branül ilerletilir','1-2 mm yavaşça geri çekilir, plastik uç vene ilerletilir','Olduğu yerde bırakılır','Hızlıca çıkarılır'],
+      ans:1,
+      explain:'Mandren 1–2 mm geri çekilir — bu plastik ucu serbest bırakır. Plastik kanül tamamı ven içine ilerletilir, sonra mandren çıkarılır.'
+    },
+  ],
+  okT:'✓ Kateter Yerleştirme Tam!',
+  okD:'Tüm teknik adımları doğru uyguladınız. Bu protokol damar duvarı hasarını ve komplikasyon riskini minimize eder.',
+  failT:'✗ Teknik Hata',
+  failD:'Kateter yerleştirme protokolü tekrar incelenmeli. Kritik hatalar: bevel yönü, açı kontrolü, mandren geri çekme tekniği.',
+},
+
+// ── STAGE 7: Tespit, SF & Kayıt (Adım 21-33) ───────────────────────
+{
+  id:'tespit', num:'GÖREV 7 / 8', name:'Tespit, Kontrol & Kayıt',
+  obj:'<strong>Elif:</strong> "Branül içeri girdi — işin yarısı bitti! Sırada tespit, kontrol ve kayıt var. Adımları doğru sıraya koy."',
+  type:'sort', time:60, xp:70,
+  steps:[
+    {t:'🩹 Branülü geçici olarak bir flaster ile sabitle',order:1},
+    {t:'🔓 Turnikeyi çöz; plastik ucun 1 cm ötesine parmakla baskı uygula (kan sızmasını önle)',order:2},
+    {t:'🗑️ Mandreni çıkar, delici-kesici atık kutusuna at',order:3},
+    {t:'💊 İğnesiz SF enjektörü branüle adapte et; 1-2 ml ver, bölgeyi gözle (ağrı/şişlik?)',order:4},
+    {t:'🩹 Sorun yoksa branülü şeffaf flaster/örtüyle kalıcı sabitle; en üste tarih + paraf flasterı yapıştır',order:5},
+    {t:'🧤 Eldivenleri çıkar; bireye rahat pozisyon ver, kenarlıkları kaldır',order:6},
+    {t:'💧 El hijyeni sağla',order:7},
+    {t:'📝 Uygulamayı ve gözlemleri hemşire izlem formuna kaydet',order:8},
+  ],
+  okT:'✓ Tespit ve Kayıt Eksiksiz!',
+  okD:'SF kontrolü komplikasyonları erken tespit eder. Tarih+paraf flasteri yasal zorunluluktur. Kayıt olmayan işlem yapılmamış sayılır.',
+  failT:'✗ Sıralama Hatası',
+  failD:'Kritik sıra hataları: turnike çözülmeden baskı uygulanamaz; mandren çıkarmadan SF verilemez; el hijyeni kayıttan ÖNCE gelir.',
+},
+
+// ── STAGE 8: Komplikasyon Yönetimi ─────────────────────────────────
+{
+  id:'komplik', num:'GÖREV 8 / 8', name:'Komplikasyon Yönetimi',
+  obj:'<strong>Elif koşarak geliyor:</strong> "Hızlı ol! İki hastada sorun var. Her birini tanı ve doğru müdahaleyi seç."',
+  type:'complication', time:80, xp:85,
+  cases:[
+    {
+      title:'🚨 Senaryo A — İnfiltrasyon',
+      vitals:[{l:'Şişlik: ++',a:true},{l:'Isı: Soğuk',a:true},{l:'Akış: Yavaş',a:false}],
+      desc:'IV başlatıldıktan <strong>2 saat</strong> sonra giriş bölgesinde <strong>şişlik, soğukluk ve ağrı</strong>. İnfüzyon damlaları yavaşlamış. Hasta "yanıyor, balonlaşıyor" diyor.',
+      opts:[
+        {l:'⏫ İnfüzyon hızını artır',ok:false},
+        {l:'🛑 Kateteri çıkar → ekstremiteyi yükselt → ılık kompres → yeni bölgeye IV aç',ok:true},
+        {l:'🌡️ Sıcak kompres uygula, devam et',ok:false},
+        {l:'📞 Doktoru ara, bekle',ok:false},
+      ],
+      okFb:'Doğru! İnfiltrasyon = sıvı damar dışına kaçıyor. Protokol: Kateteri çıkar → Ekstremiteyi yükselt → Ilık kompres → Yeni bölgeye IV hattı aç. Doktoru bilgilendir.',
+      failFb:'Yanlış. İnfiltrasyonda sıvı doku içine kaçmaktadır; devam etmek ciddi doku hasarına yol açar. Kateter derhal çıkarılmalıdır.',
+    },
+    {
+      title:'🔴 Senaryo B — Kimyasal Flebit',
+      vitals:[{l:'Kızarıklık: +',a:true},{l:'Ven hattı: Sıcak',a:true},{l:'Hassasiyet: ++',a:true}],
+      desc:'<strong>3. günde</strong> kateter bölgesinden başlayan kızarıklık, ven trasesi boyunca <strong>sıcaklık artışı ve hassasiyet</strong>. Hasta ağrıdan şikayet ediyor.',
+      opts:[
+        {l:'💊 Antibiyotik başla, IV\'e devam et',ok:false},
+        {l:'🛑 Kateteri çıkar → ılık kompres → ekstremiteyi yükselt → gerekirse kültür',ok:true},
+        {l:'⏩ Daha hızlı infüze et',ok:false},
+        {l:'🔄 Sadece kateter pozisyonunu değiştir',ok:false},
+      ],
+      okFb:'Doğru! Flebit: kateter derhal çıkar, ılık kompres, ekstremite yükseltme. Ciddi ise kültür al, doktoru bilgilendir. 72 saati aşan kateterlerde risk artar.',
+      failFb:'Yanlış. Flebit geliştiğinde kateter HEMEN çıkarılmalıdır — devam etmek venöz hasarı ve sistemik enfeksiyon riskini artırır.',
+    },
+  ],
+  okT:'✓ Komplikasyon Yönetimi Başarılı!',
+  okD:'Her iki senaryoyu da doğru yönettiniz. Erken tanı ve hızlı müdahale hasta güvenliğinin anahtarıdır.',
+  failT:'✗ Komplikasyon Hatası',
+  failD:'Flebit ve infiltrasyon protokollerini tekrar inceleyin. Her ikisinde de ilk adım kateteri çıkarmaktır.',
+},
+];
+
+// ═══════════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════════
+let G={
+  s:0,xp:0,hp:100,cor:0,wrg:0,
+  tInt:null,tLeft:0,ans:false,
+  results:[],selItems:new Set(),
+  sortOrd:[],angle:20,compDone:0,
+  qaIdx:0,qaCorrect:0,
+  matchSel:null,matchDone:0,
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  AUDIO
+// ═══════════════════════════════════════════════════════════════════
+const AC=new(window.AudioContext||window.webkitAudioContext)();
+function beep(f,d,t='sine',v=.18){
+  try{const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);
+  o.frequency.value=f;o.type=t;g.gain.setValueAtTime(v,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.start();o.stop(AC.currentTime+d);}catch(e){}
+}
+function sfxOk(){beep(520,.07);setTimeout(()=>beep(660,.1),80);setTimeout(()=>beep(880,.15),180);}
+function sfxFail(){beep(280,.15,'sawtooth',.14);setTimeout(()=>beep(200,.2,'sawtooth',.1),160);}
+function sfxTick(){beep(800,.04,'square',.04);}
+function sfxXP(){beep(660,.06);setTimeout(()=>beep(880,.06),70);}
+function sfxClick(){beep(440,.04,'square',.06);}
+
+// ═══════════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════════
+const $=id=>document.getElementById(id);
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+
+function startGame(){$('hud').style.display='block';buildDots();show('s-stage');loadStage(0);}
+
+function buildDots(){
+  $('dots').innerHTML=STAGES.map((_,i)=>`<div class="dot" id="d${i}"></div>`).join('');
+}
+function updateDots(i){
+  STAGES.forEach((_,j)=>{const d=$('d'+j);d.className='dot'+(j<i?' done':j===i?' active':'');});
+}
+
+function addXP(n){
+  G.xp+=n;$('xp-v').innerHTML=G.xp+' <small>XP</small>';
+  const b=G.xp>=380?'USTA HEMŞİRE':G.xp>=200?'UZMAN':'ÇAYLAK';
+  const chip=$('bc');chip.textContent=b;
+  chip.className='badge-chip'+(G.xp>=380?' usta':G.xp>=200?' uzman':'');
+  const t=document.createElement('div');t.className='xp-toast';t.textContent='+'+n+' XP';
+  document.body.appendChild(t);setTimeout(()=>t.remove(),1900);sfxXP();
+}
+
+function dmgHP(n){
+  G.hp=Math.max(0,G.hp-n);
+  const f=$('hpf');f.style.width=G.hp+'%';
+  f.style.background=G.hp>60?'':G.hp>30?'linear-gradient(90deg,#f59e0b,#fbbf24)':'linear-gradient(90deg,#dc2626,#f87171)';
+  const bf=$('bf');bf.className='bf show';setTimeout(()=>bf.className='bf',900);
+}
+
+function showFB(ok,title,detail){
+  const el=$('fb');el.className='fb-box show '+(ok?'ok':'fail');
+  $('fb-i').textContent=ok?'✅':'❌';$('fb-t').textContent=title;$('fb-d').textContent=detail;
+}
+function hideFB(){$('fb').className='fb-box';}
+function showNext(){$('next-wrap').style.display='block';}
+
+function startTimer(secs){
+  clearInterval(G.tInt);G.tLeft=secs;
+  const prog=$('tp'),chip=$('tc');
+  prog.style.width='100%';prog.style.background='var(--accent)';
+  chip.className='timer-c';chip.textContent=secs+'s';
+  G.tInt=setInterval(()=>{
+    G.tLeft--;
+    prog.style.width=(G.tLeft/secs*100)+'%';chip.textContent=G.tLeft+'s';
+    if(G.tLeft<=10){prog.style.background='var(--red)';chip.className='timer-c urg';sfxTick();}
+    if(G.tLeft<=0){clearInterval(G.tInt);if(!G.ans)timeUp();}
+  },1000);
+}
+
+function timeUp(){
+  G.ans=true;G.wrg++;dmgHP(20);sfxFail();
+  const s=STAGES[G.s];
+  showFB(false,'⏰ Süre Doldu!',s.failD);
+  G.results.push({name:s.name,ok:false,xp:0});showNext();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  STAGE LOADER
+// ═══════════════════════════════════════════════════════════════════
+function loadStage(idx){
+  G.s=idx;G.ans=false;G.selItems=new Set();G.sortOrd=[];G.angle=20;
+  G.compDone=0;G.qaIdx=0;G.qaCorrect=0;G.matchSel=null;G.matchDone=0;
+  hideFB();$('next-wrap').style.display='none';
+  updateDots(idx);
+  const s=STAGES[idx];
+  $('st-num').textContent=s.num;
+  $('st-name').textContent=s.name;
+  $('st-obj').innerHTML=s.obj;
+  $('smini').textContent=s.name;
+  const c=$('stage-content');c.innerHTML='';
+  if(s.type==='sort')renderSort(s,c);
+  else if(s.type==='multi')renderMulti(s,c);
+  else if(s.type==='anatomy')renderAnatomy(s,c);
+  else if(s.type==='sequence_qa')renderQA(s,c);
+  else if(s.type==='complication')renderComp(s,c);
+  startTimer(s.time);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SORT
+// ═══════════════════════════════════════════════════════════════════
+function renderSort(s,el){
+  G.sortOrd=s.steps.map((_,i)=>i).sort(()=>Math.random()-.5);
+  let dragged=null;
+  const list=document.createElement('div');list.className='sort-list';
+  function rebuild(){
+    list.innerHTML='';
+    G.sortOrd.forEach((oi,pos)=>{
+      const row=document.createElement('div');row.className='s-row';
+      row.draggable=true;row.dataset.pos=pos;
+      row.innerHTML=`<span class="drag-h">⠿</span><span class="s-num">${pos+1}</span><span style="flex:1;font-size:13px;line-height:1.4">${s.steps[oi].t}</span>`;
+      row.addEventListener('dragstart',()=>{dragged=pos;setTimeout(()=>row.classList.add('dragging'),0);});
+      row.addEventListener('dragend',()=>row.classList.remove('dragging'));
+      row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('over');});
+      row.addEventListener('dragleave',()=>row.classList.remove('over'));
+      row.addEventListener('drop',e=>{
+        e.preventDefault();row.classList.remove('over');
+        if(dragged===null||dragged===pos)return;
+        const a=[...G.sortOrd];[a[dragged],a[pos]]=[a[pos],a[dragged]];
+        G.sortOrd=a;rebuild();sfxClick();
+      });
+      list.appendChild(row);
+    });
+  }
+  rebuild();
+  el.appendChild(list);
+  const btn=document.createElement('button');btn.className='btn-conf';btn.textContent='SIRALAMAYI ONAYLA';
+  btn.onclick=()=>{
+    if(G.ans)return;G.ans=true;clearInterval(G.tInt);
+    const ok=G.sortOrd.every((oi,pos)=>s.steps[oi].order===pos+1);
+    list.querySelectorAll('.s-row').forEach((r,pos)=>{
+      r.style.cursor='default';r.draggable=false;
+      r.classList.remove('over');
+      r.classList.add(s.steps[G.sortOrd[pos]].order===pos+1?'ok':'fail');
+    });
+    if(ok){addXP(s.xp);G.cor++;sfxOk();showFB(true,s.okT,s.okD);G.results.push({name:s.name,ok:true,xp:s.xp});}
+    else{G.wrg++;dmgHP(15);sfxFail();showFB(false,s.failT,s.failD);G.results.push({name:s.name,ok:false,xp:0});}
+    showNext();
+  };
+  el.appendChild(btn);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MULTI SELECT
+// ═══════════════════════════════════════════════════════════════════
+function renderMulti(s,el){
+  const grid=document.createElement('div');grid.className='items-grid';
+  s.items.forEach((item,i)=>{
+    const card=document.createElement('div');card.className='i-card';
+    card.innerHTML=`<span class="ic">${item.ic}</span><span class="il">${item.l.replace('\n','<br>')}</span>`;
+    card.onclick=()=>{
+      if(G.ans)return;sfxClick();
+      if(G.selItems.has(i)){G.selItems.delete(i);card.classList.remove('sel');}
+      else{G.selItems.add(i);card.classList.add('sel');}
+    };
+    grid.appendChild(card);
+  });
+  el.appendChild(grid);
+  const btn=document.createElement('button');btn.className='btn-conf';btn.textContent='ONAYLA';
+  btn.onclick=()=>{
+    if(G.ans)return;G.ans=true;clearInterval(G.tInt);
+    let ok=true;
+    s.items.forEach((item,i)=>{if(item.ok!==G.selItems.has(i))ok=false;});
+    grid.querySelectorAll('.i-card').forEach((c,i)=>{
+      c.classList.remove('sel');
+      if(s.items[i].ok)c.classList.add('ok');
+      else if(G.selItems.has(i))c.classList.add('fail');
+    });
+    if(ok){addXP(s.xp);G.cor++;sfxOk();showFB(true,s.okT,s.okD);G.results.push({name:s.name,ok:true,xp:s.xp});}
+    else{G.wrg++;dmgHP(15);sfxFail();showFB(false,s.failT,s.failD);G.results.push({name:s.name,ok:false,xp:0});}
+    showNext();
+  };
+  el.appendChild(btn);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  ANATOMY MAP
+// ═══════════════════════════════════════════════════════════════════
+function renderAnatomy(s,el){
+  const wrap=document.createElement('div');wrap.className='anatomy-wrap';
+  wrap.style.cssText='height:340px;position:relative;';
+  wrap.innerHTML=`
+  <svg viewBox="0 0 440 340" style="width:100%;display:block" xmlns="http://www.w3.org/2000/svg">
+    <rect width="440" height="340" fill="var(--card)" rx="12"/>
+    <path d="M148,285 C132,280 112,255 110,200 C108,150 117,82 132,42 L162,42 C172,82 180,150 178,200 C176,255 166,280 156,285 Z" fill="#2d3a52" stroke="rgba(100,180,255,0.2)" stroke-width="1.5"/>
+    <path d="M150,280 C138,272 122,248 122,200 C120,154 128,86 140,46 L154,46 C164,86 170,154 168,200 C166,248 164,272 154,280 Z" fill="#3d4f6d" opacity="0.5"/>
+    <path d="M140,278 C135,252 129,200 127,150 C125,110 129,72 134,46" fill="none" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+    <path d="M164,278 C169,252 175,200 176,150 C177,110 173,72 168,46" fill="none" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+    <path d="M132,118 C142,110 162,110 172,118" fill="none" stroke="#93c5fd" stroke-width="3" opacity="0.9"/>
+    <text x="95" y="168" font-size="10" fill="rgba(148,163,184,0.65)" font-family="Nunito,sans-serif">Sefalik</text>
+    <text x="178" y="168" font-size="10" fill="rgba(148,163,184,0.65)" font-family="Nunito,sans-serif">Bazilik</text>
+    <text x="55" y="28" font-size="11" fill="rgba(148,163,184,0.4)" font-family="Nunito,sans-serif">Proksimal ↑</text>
+    <text x="55" y="318" font-size="11" fill="rgba(148,163,184,0.4)" font-family="Nunito,sans-serif">Distal ↓</text>
+    <path d="M135,276 C138,287 150,292 154,294" fill="none" stroke="#60a5fa" stroke-width="2" opacity="0.55"/>
+    <path d="M135,276 C136,283 143,290 146,293" fill="none" stroke="#60a5fa" stroke-width="2" opacity="0.55"/>
+    <path d="M169,276 C166,287 156,292 154,294" fill="none" stroke="#60a5fa" stroke-width="2" opacity="0.55"/>
+    <ellipse cx="152" cy="44" rx="24" ry="9" fill="#2d3a52" stroke="rgba(100,180,255,0.15)" stroke-width="1"/>
+  </svg>`;
+  s.vens.forEach(v=>{
+    const btn=document.createElement('div');btn.className='ven-btn';
+    btn.style.cssText=`left:${v.x};top:${v.y};width:${v.w}px;height:${Math.round(v.w*.65)}px;transform:translate(-50%,-50%);font-size:10px;padding:4px;`;
+    btn.innerHTML=v.l.replace('\n','<br>');
+    btn.title=v.r;
+    btn.onclick=()=>{
+      if(G.ans)return;G.ans=true;clearInterval(G.tInt);
+      wrap.querySelectorAll('.ven-btn').forEach(b=>b.style.pointerEvents='none');
+      if(v.ok){
+        btn.classList.add('ok');addXP(s.xp);G.cor++;sfxOk();
+        showFB(true,s.okT,s.okD);G.results.push({name:s.name,ok:true,xp:s.xp});
+      } else {
+        btn.classList.add('fail');
+        wrap.querySelectorAll('.ven-btn').forEach((b,bi)=>{if(s.vens[bi].ok)b.classList.add('ok');});
+        G.wrg++;dmgHP(15);sfxFail();
+        showFB(false,s.failT,v.r);G.results.push({name:s.name,ok:false,xp:0});
+      }
+      showNext();
+    };
+    wrap.appendChild(btn);
+  });
+  el.appendChild(wrap);
+  el.insertAdjacentHTML('beforeend','<p style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:10px">Her ven bölgesinin üzerine tıklayarak seçim yapabilirsin. İpucu için üzerinde bekle.</p>');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SEQUENTIAL Q&A (kateter yerleştirme)
+// ═══════════════════════════════════════════════════════════════════
+function renderQA(s,el){
+  const container=document.createElement('div');
+  function renderCurrent(){
+    container.innerHTML='';
+    if(G.qaIdx>=s.qas.length){
+      // All done
+      G.ans=true;clearInterval(G.tInt);
+      const ok=G.qaCorrect===s.qas.length;
+      if(ok){addXP(s.xp);G.cor++;sfxOk();showFB(true,s.okT,s.okD);G.results.push({name:s.name,ok:true,xp:s.xp});}
+      else{G.wrg++;dmgHP(10);sfxFail();showFB(false,s.failT,s.failD+` (${G.qaCorrect}/${s.qas.length} doğru)`);G.results.push({name:s.name,ok:false,xp:Math.round(s.xp*G.qaCorrect/s.qas.length)});}
+      showNext();return;
+    }
+    const qa=s.qas[G.qaIdx];
+    const prog=document.createElement('div');
+    prog.style.cssText='font-size:11px;color:var(--text3);margin-bottom:10px;text-align:right';
+    prog.textContent=`Soru ${G.qaIdx+1} / ${s.qas.length}`;
+    container.appendChild(prog);
+    const qBox=document.createElement('div');
+    qBox.style.cssText='background:var(--bg3);border-left:3px solid var(--purple);padding:12px 14px;border-radius:0 8px 8px 0;font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;line-height:1.5;';
+    qBox.textContent=qa.q;container.appendChild(qBox);
+    const grid=document.createElement('div');grid.className='seq-grid';
+    qa.opts.forEach((opt,oi)=>{
+      const btn=document.createElement('div');btn.className='seq-item';btn.textContent=opt;
+      btn.onclick=()=>{
+        grid.querySelectorAll('.seq-item').forEach(b=>b.style.pointerEvents='none');
+        const correct=oi===qa.ans;
+        if(correct){btn.classList.add('ok');const b=document.createElement('div');b.className='seq-badge';b.textContent='✓';btn.appendChild(b);sfxOk();G.qaCorrect++;}
+        else{
+          btn.classList.add('fail');
+          grid.querySelectorAll('.seq-item')[qa.ans].classList.add('ok');
+          sfxFail();if(G.qaIdx>0)dmgHP(8);
+        }
+        const expl=document.createElement('div');
+        expl.style.cssText=`margin-top:10px;padding:10px 13px;border-radius:8px;font-size:12px;line-height:1.5;background:${correct?'rgba(52,211,153,.08)':'rgba(248,113,113,.07)'};border:1px solid ${correct?'rgba(52,211,153,.3)':'rgba(248,113,113,.3)'};color:${correct?'#a7f3d0':'#fecaca'}`;
+        expl.textContent=(correct?'✅ ':'❌ ')+qa.explain;
+        container.appendChild(expl);
+        setTimeout(()=>{G.qaIdx++;renderCurrent();},1600);
+      };
+      grid.appendChild(btn);
+    });
+    container.appendChild(grid);
+  }
+  renderCurrent();
+  el.appendChild(container);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  COMPLICATION
+// ═══════════════════════════════════════════════════════════════════
+function renderComp(s,el){
+  let cDone=0,allOk=true;
+  s.cases.forEach((cas)=>{
+    const wrap=document.createElement('div');wrap.className='comp-wrap';
+    const vHtml=cas.vitals.map(v=>`<span class="vbadge${v.a?' al':''}">${v.l}</span>`).join('');
+    wrap.innerHTML=`<div class="comp-title">${cas.title}</div><div class="vital-strip">${vHtml}</div><div class="comp-sym">${cas.desc}</div>`;
+    const grid=document.createElement('div');grid.className='comp-opts';
+    cas.opts.forEach((opt)=>{
+      const btn=document.createElement('button');btn.className='c-opt';btn.textContent=opt.l;
+      btn.onclick=()=>{
+        if(btn.disabled)return;
+        grid.querySelectorAll('.c-opt').forEach(b=>{b.disabled=true;});
+        cas.opts.forEach((o,j)=>{if(o.ok)grid.querySelectorAll('.c-opt')[j].classList.add('c-ok');});
+        const fb=document.createElement('div');
+        fb.style.cssText='margin-top:9px;padding:9px 11px;border-radius:7px;font-size:12px;line-height:1.5;';
+        if(opt.ok){btn.classList.add('c-ok');fb.style.cssText+='background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3);color:#a7f3d0';fb.textContent='✅ '+cas.okFb;sfxOk();}
+        else{btn.classList.add('c-fail');fb.style.cssText+='background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.3);color:#fecaca';fb.textContent='❌ '+cas.failFb;allOk=false;dmgHP(10);sfxFail();}
+        wrap.appendChild(fb);cDone++;
+        if(cDone>=s.cases.length){
+          G.ans=true;clearInterval(G.tInt);
+          if(allOk){addXP(s.xp);G.cor++;showFB(true,s.okT,s.okD);G.results.push({name:s.name,ok:true,xp:s.xp});}
+          else{G.wrg++;showFB(false,s.failT,s.failD);G.results.push({name:s.name,ok:false,xp:0});}
+          showNext();
+        }
+      };
+      grid.appendChild(btn);
+    });
+    wrap.appendChild(grid);el.appendChild(wrap);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════════════
+function nextStage(){
+  const next=G.s+1;
+  if(next>=STAGES.length){endGame();return;}
+  loadStage(next);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  END GAME
+// ═══════════════════════════════════════════════════════════════════
+function endGame(){
+  clearInterval(G.tInt);$('hud').style.display='none';show('s-result');
+  const xp=G.xp;
+  let title,badge,bClass,quote;
+  if(xp>=380){title='USTA HEMŞİRE';badge='🏅 USTA HEMŞİRE';bClass='rb-m';quote='Mükemmel! Tüm 33 protokol adımını eksiksiz uyguladınız. Elif Hemşire gülümsüyor: "Beni geçeceksin yakında. Mehmet Bey harika hissediyor!"';}
+  else if(xp>=200){title='UZMAN HEMŞİRE';badge='⭐ UZMAN';bClass='rb-u';quote='İyi iş! Temel adımları kavradınız. Elif: "Teknik bilgin güçlü — küçük eksikleri tamamlarsan hazır olacaksın."';}
+  else{title='ÇAYLAK';badge='📚 ÇAYLAK';bClass='rb-c';quote='Endişelenme! Elif: "İlk denemede kimse usta olamaz. Protokol adımlarını oku, bir daha dene!"';}
+  const rt=$('rt');rt.textContent=title;rt.style.color=xp>=380?'var(--green)':xp>=200?'var(--yellow)':'var(--text2)';
+  const rb=$('rb');rb.textContent=badge;rb.className='r-badge '+bClass;
+  $('rq').textContent=quote;$('rxp').textContent=xp;$('rcor').textContent=G.cor;$('rwr').textContent=G.wrg;
+  const bd=$('rbd');
+  G.results.forEach(r=>{
+    const row=document.createElement('div');row.className='rb-row';
+    row.innerHTML=`<span>${r.ok?'✅':'❌'}</span><span class="rb-name">${r.name}</span><span class="rb-xp ${r.ok?'ok':'fail'}">${r.ok?'+'+r.xp+' XP':'0 XP'}</span>`;
+    bd.appendChild(row);
+  });
+  if(xp>=380){for(let i=0;i<8;i++)setTimeout(()=>beep(440+i*70,.1),i*110);}
+  else sfxOk();
+}
+
+function restartGame(){
+  G={s:0,xp:0,hp:100,cor:0,wrg:0,tInt:null,tLeft:0,ans:false,results:[],selItems:new Set(),sortOrd:[],angle:20,compDone:0,qaIdx:0,qaCorrect:0,matchSel:null,matchDone:0};
+  $('xp-v').innerHTML='0 <small>XP</small>';
+  $('bc').textContent='ÇAYLAK';$('bc').className='badge-chip';
+  $('hpf').style.width='100%';$('hpf').style.background='';
+  $('rbd').innerHTML='';
+  $('hud').style.display='block';
+  buildDots();show('s-stage');loadStage(0);
+}
+
+function copyResult(){
+  const xp=G.xp;
+  const b=xp>=380?'USTA HEMŞİRE 🏅':xp>=200?'UZMAN ⭐':'ÇAYLAK 📚';
+  const txt=[
+    '═══════════════════════════',
+    '  IV SIM — Eğitim Sonuçları',
+    '═══════════════════════════',
+    `Rozet    : ${b}`,
+    `XP       : ${xp}`,
+    `Doğru    : ${G.cor}  |  Hata: ${G.wrg}`,
+    `Hasta Güveni: ${G.hp}%`,
+    '',
+    ...G.results.map(r=>`${r.ok?'✅':'❌'} ${r.name}: ${r.ok?'+'+r.xp+' XP':'0 XP'}`),
+    '═══════════════════════════',
+    `Tarih: ${new Date().toLocaleDateString('tr-TR')}`,
+  ].join('\n');
+  navigator.clipboard.writeText(txt).then(()=>alert('Sonuçlar kopyalandı ✓')).catch(()=>prompt('Kopyala:',txt));
+}
+</script>
+</body>
+</html>
